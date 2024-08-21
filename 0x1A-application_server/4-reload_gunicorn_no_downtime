@@ -1,4 +1,41 @@
-#!/usr/bin/env bash
-# Gracefully reloads Gunicorn.
+#!/bin/bash
 
-ps aux | grep gunicorn | awk '{ print $2 }' | xargs kill -HUP
+# Path to Gunicorn executable and PID file
+GUNICORN_BIN="/home/vagrant/AirBnB_clone_v4/bin/gunicorn"
+PID_FILE="/run/gunicorn/gunicorn.pid"
+
+# Function to reload Gunicorn
+reload_gunicorn() {
+    echo "Reloading Gunicorn..."
+
+    if [ -f "$PID_FILE" ]; then
+        # Read the PID of the master process
+        MASTER_PID=$(cat "$PID_FILE")
+
+        if [ -n "$MASTER_PID" ]; then
+            # Send a SIGHUP signal to the master process to reload
+            kill -HUP "$MASTER_PID"
+            echo "Gunicorn reloaded successfully."
+        else
+            echo "Master PID not found in $PID_FILE. Starting Gunicorn..."
+            start_gunicorn
+        fi
+    else
+        echo "$PID_FILE not found. Starting Gunicorn..."
+        start_gunicorn
+    fi
+}
+
+# Function to start Gunicorn
+start_gunicorn() {
+    $GUNICORN_BIN --bind 0.0.0.0:8001 --workers 4 web_flask.0-hello_route:app --pid $PID_FILE
+    echo "Gunicorn started successfully."
+}
+
+# Check if Gunicorn is running
+if pgrep -f "$GUNICORN_BIN" > /dev/null; then
+    reload_gunicorn
+else
+    echo "Gunicorn is not running. Starting Gunicorn..."
+    start_gunicorn
+fi

@@ -2,4 +2,3 @@
 # Gracefully reloads Gunicorn.
 
 pgrep gunicorn | xargs kill -HUP
-
